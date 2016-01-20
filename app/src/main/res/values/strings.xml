@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Handle It</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_settings">Settings</string>
+    <string name="no_video_description">No Video Description</string>
+    <string name="answer_complete">Answer Complete ?</string>
+    <string name="video_photo">Video Photo</string>
+</resources>
