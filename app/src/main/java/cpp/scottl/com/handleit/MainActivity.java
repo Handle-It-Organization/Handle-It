@@ -7,6 +7,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -141,6 +142,11 @@ public class MainActivity extends AppCompatActivity
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             Bundle arguments = getArguments();
             int pageNumber = arguments.getInt(ARG_PAGE);
+            if (pageNumber == 2){
+                Fragment videoFragment = new Fragment();
+                FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+                transaction.add(R.id.EventImage, videoFragment).commit();
+            }
             TextView myText = new TextView(getActivity());
             myText.setText("I am the text inside this fragment "+pageNumber);
             myText.setGravity(Gravity.CENTER);
