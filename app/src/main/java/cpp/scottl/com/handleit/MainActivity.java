@@ -1,6 +1,9 @@
 package cpp.scottl.com.handleit;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -26,6 +29,7 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    public static final int CAMERA_REQUEST = 10;
     private Toolbar toolbar;
     private TabLayout myTabLayout;
     private ViewPager mypager;
@@ -49,10 +53,11 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(cameraIntent, CAMERA_REQUEST);
             }
         });
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -62,6 +67,19 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        // If the user choose ok then enter.
+        if (resultCode == RESULT_OK) {
+            if(requestCode == CAMERA_REQUEST) {
+                // This is where we are hearing back from the camera
+                Bitmap cameraImage = (Bitmap) data.getExtras().get("data");//This is how we access the image the camera takes
+
+            }
+        }
     }
 
     @Override
@@ -90,6 +108,12 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            return true;
+        }
+        // Used to launch the login activity when the item is clicked
+        if (id == R.id.action_login) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
             return true;
         }
 
@@ -142,14 +166,14 @@ public class MainActivity extends AppCompatActivity
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             Bundle arguments = getArguments();
             int pageNumber = arguments.getInt(ARG_PAGE);
-            if (pageNumber == 2){
+            /*if (pageNumber == 2) {
                 Fragment videoFragment = new Fragment();
                 FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
                 transaction.add(R.id.EventImage, videoFragment).commit();
-            }
+            }*/
             TextView myText = new TextView(getActivity());
-            myText.setText("I am the text inside this fragment "+pageNumber);
-            myText.setGravity(Gravity.CENTER);
+          //  myText.setText("I am the text inside this fragment "+pageNumber);
+           // myText.setGravity(Gravity.CENTER);
             return myText;
         }
 
