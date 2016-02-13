@@ -12,6 +12,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +27,11 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -39,6 +45,30 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // This is for the firebase
+        Firebase.setAndroidContext(this);
+        // Create firebase object ref
+        Firebase myFirebaseRef = new Firebase("https://shining-heat-9080.firebaseio.com/");
+        myFirebaseRef.child("student/030").setValue("student demo");  // Creates new record
+        myFirebaseRef.child("student/010/name").setValue("new name from app"); // Mods the existing name
+        // Create a new class Student and have getters and setters of name and age. then create object
+        // and pass it to the firebase. it will fill in all the right data
+                    //  Student student = new Student("Scott", 16);
+                    // myFirebaseRef.child("student/040").setValue(student);
+        //You can have a loop that will set this also.
+
+        myFirebaseRef.child("student").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.i("Test", dataSnapshot.getKey() + " : " + dataSnapshot.getValue());
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+
         myAdapter = new MyPagerAdapter(getSupportFragmentManager());
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
