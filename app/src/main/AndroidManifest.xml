@@ -12,9 +12,6 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
-    <service
-        android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
-        android:enabled="true" />
 
     <application
         android:allowBackup="true"
@@ -22,9 +19,11 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <service
+            android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
+            android:enabled="true" />
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"></activity>
         <activity
             android:name=".LoginActivity"
@@ -32,7 +31,7 @@
         <activity
             android:name=".StartActivity"
             android:configChanges="orientation"
-            android:label="@string/title_activity_start"
+            android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>

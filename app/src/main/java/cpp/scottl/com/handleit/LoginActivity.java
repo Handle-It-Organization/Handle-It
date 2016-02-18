@@ -28,10 +28,14 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.firebase.client.Firebase;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.Manifest.permission.LOCATION_HARDWARE;
 import static android.Manifest.permission.READ_CONTACTS;
 
 /**
@@ -61,11 +65,21 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private Firebase firebase;
+    private Button logInButton;
+    private Button signUpButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        // This is for the firebase
+        Firebase.setAndroidContext(this);
+        // Create firebase object ref
+        firebase = new Firebase("https://shining-heat-9080.firebaseio.com/");
+        logInButton = (Button)findViewById(R.id.log_in_button);
+        signUpButton = (Button)findViewById(R.id.sign_up_button);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
@@ -79,6 +93,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                     return true;
                 }
                 return false;
+            }
+        });
+
+        logInButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(LoginActivity.this, "Clicked Login", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        signUpButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(LoginActivity.this, "Clicked Sign up", Toast.LENGTH_SHORT).show();
             }
         });
 
