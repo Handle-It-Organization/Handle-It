@@ -1,5 +1,7 @@
 package cpp.scottl.com.handleit;
 
+import android.widget.TextView;
+
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -19,9 +21,10 @@ public class MessageDataSource {
     public static final String TAG = "MessageDataSource";
     public static final String COLUMN_TEXT = "text";
     public static final String COLUMN_SENDER = "sender";
+    private TextView listView;
 
     public static void saveMessage(Message message, String convoId) {
-        Date date = message.getmDate();
+     /*   Date date = message.getmDate();
         String key = sDateFormat.format(date);
         HashMap<String, String> msg = new HashMap<>();
         msg.put(COLUMN_TEXT,message.getmText());
@@ -101,6 +104,6 @@ public class MessageDataSource {
     }
 
     public interface MessagesCallbacks{
-        public void onMessageAdded(Message message);
+        public void onMessageAdded(Message message);*/
     }
 }

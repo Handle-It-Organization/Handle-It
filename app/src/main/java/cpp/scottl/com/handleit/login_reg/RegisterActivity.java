@@ -1,8 +1,11 @@
-package cpp.scottl.com.handleit;
+package cpp.scottl.com.handleit.login_reg;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -19,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -30,18 +34,27 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.ValueEventListener;
+
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import static android.Manifest.permission.LOCATION_HARDWARE;
+import cpp.scottl.com.handleit.R;
+import cpp.scottl.com.handleit.StartActivity;
+import cpp.scottl.com.handleit.User;
+
 import static android.Manifest.permission.READ_CONTACTS;
 
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class RegisterActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -66,25 +79,28 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private View mProgressView;
     private View mLoginFormView;
     private Firebase firebase;
-    private Button logInButton;
-    private Button signUpButton;
-
+    private Button registerButton;
+    private AutoCompleteTextView emailRegisterText;
+    private TextView userNameText,passwordTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
         // This is for the firebase
         Firebase.setAndroidContext(this);
         // Create firebase object ref
         firebase = new Firebase("https://shining-heat-9080.firebaseio.com/");
-        logInButton = (Button)findViewById(R.id.log_in_button);
-        signUpButton = (Button)findViewById(R.id.sign_up_button);
         // Set up the login form.
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        mEmailView = (AutoCompleteTextView) findViewById(R.id.emailRegisterTextView);
         populateAutoComplete();
+        registerButton = (Button) findViewById(R.id.registerButton);
+        emailRegisterText = (AutoCompleteTextView) findViewById(R.id.emailRegisterTextView);
+        userNameText = (TextView) findViewById(R.id.usernameText);
+        passwordTextView = (TextView) findViewById(R.id.passwordRegistrationEditText);
 
-        mPasswordView = (EditText) findViewById(R.id.password);
+
+        mPasswordView = (EditText) findViewById(R.id.passwordRegistrationEditText);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -96,30 +112,85 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        logInButton.setOnClickListener(new OnClickListener() {
+        registerButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(LoginActivity.this, "Clicked Login", Toast.LENGTH_SHORT).show();
-            }
-        });
+                String email = emailRegisterText.getText().toString().trim();
+                String password = passwordTextView.getText().toString().trim();
+                final String userName = userNameText.getText().toString().trim();
+                boolean usernameFree = checkIfNameFree(userName);
 
-        signUpButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(LoginActivity.this, "Clicked Sign up", Toast.LENGTH_SHORT).show();
-            }
-        });
+                if(usernameFree) {
+                    firebase.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
+                        @Override
+                        public void onSuccess(Map<String, Object> stringObjectMap) {
+                            Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
+                            String email = emailRegisterText.getText().toString().trim();
+                            String password = passwordTextView.getText().toString().trim();
+                            final String username = userNameText.getText().toString().trim();
+                            User user = new User(email, username, (String) stringObjectMap.get("uid"));
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptLogin();
+                            firebase.child("user/" + user.getUsername()).setValue(user);
+                            //After Register Auto Login then go to main page
+                            firebase.authWithPassword(email, password, new Firebase.AuthResultHandler() {
+                                @Override
+                                public void onAuthenticated(AuthData authData) {
+                                    Log.i("TEST", "Success: " + authData);
+                                    Toast.makeText(RegisterActivity.this, "Login Successfully", Toast.LENGTH_SHORT).show();
+                                    String email = (String) authData.getProviderData().get("email");
+                                    String uid = authData.getUid();
+                                    // Saves user info
+                                    SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = sharedPref.edit();
+                                    editor.putString("username", username);
+                                    editor.putString("email", email);
+                                    editor.putString("uid", uid);
+                                    editor.apply();
+
+                                    Intent intent = new Intent(RegisterActivity.this, StartActivity.class);
+                                    intent.putExtra("email", email);
+                                    intent.putExtra("uid", uid);
+                                    startActivity(intent);
+                                }
+                                @Override
+                                public void onAuthenticationError(FirebaseError firebaseError) {
+                                    Log.e("TEST", "Failed: " + firebaseError);
+                                    Toast.makeText(RegisterActivity.this, "Login Unsuccessful", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        @Override
+                        public void onError(FirebaseError firebaseError) {
+                            Toast.makeText(RegisterActivity.this, "Registration Unsuccessfully", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(RegisterActivity.this, firebaseError.toString(), Toast.LENGTH_SHORT).show();
+                            Log.e("TEST", "Failed to create the user. " + firebaseError);
+                        }
+                    });
+                }
             }
         });
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+
+    private Boolean checkIfNameFree(final String uName) {
+        final Boolean[] uNameFree = {true};
+        firebase.child("user").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.hasChild(uName)) {
+                    Toast.makeText(RegisterActivity.this, "Username Taken", Toast.LENGTH_SHORT).show();
+                    uNameFree[0] = false;
+                } else {
+                    uNameFree[0] = true;
+                }
+            }
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        });
+        return uNameFree[0];
     }
 
     private void populateAutoComplete() {
@@ -301,7 +372,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(LoginActivity.this,
+                new ArrayAdapter<>(RegisterActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);
@@ -373,6 +444,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+        startActivity(intent);
     }
 }
 

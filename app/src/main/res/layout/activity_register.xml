@@ -8,7 +8,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".login_reg.LoginActivity">
+    tools:context=".login_reg.RegisterActivity">
 
     <!-- Login progress -->
     <ProgressBar
@@ -35,7 +35,7 @@
                 android:layout_height="wrap_content">
 
                 <AutoCompleteTextView
-                    android:id="@+id/emailText"
+                    android:id="@+id/emailRegisterTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_email"
@@ -50,7 +50,21 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:id="@+id/passwordText"
+                    android:id="@+id/usernameText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Username"
+                    android:maxLines="1"
+                    android:singleLine="true" />
+
+            </android.support.design.widget.TextInputLayout>
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/passwordRegistrationEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_password"
@@ -64,30 +78,13 @@
             </android.support.design.widget.TextInputLayout>
 
             <Button
-                android:id="@+id/log_in_button"
+                android:id="@+id/registerButton"
                 style="?android:textAppearanceSmall"
-                android:text="LogIn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/registerTextView"
-                android:text="Register Here"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="10dp"
-                android:layout_gravity="center"
-                style="?android:textAppearanceSmall"
-                android:textStyle="italic"
-                android:clickable="true" />
-         <!--   <Button
-                android:id="@+id/sign_up_button"
-                style="?android:textAppearanceSmall"
-
-                android:text="Sign Up"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"/>-->
+                android:layout_marginTop="16dp"
+                android:text="Register"
+                android:textStyle="bold" />
 
         </LinearLayout>
     </ScrollView>

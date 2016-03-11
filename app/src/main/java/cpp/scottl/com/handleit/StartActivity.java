@@ -1,11 +1,15 @@
 package cpp.scottl.com.handleit;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -22,33 +26,44 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import cpp.scottl.com.handleit.login_reg.LoginActivity;
 
 public class StartActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private ListView listView;
     private CustomListViewAdapter customListViewAdapter;
     public static final int CAMERA_REQUEST = 10;
+    static final int REQUEST_IMAGE_CAPTURE = 1;
     private ImageView imageView;
     private Firebase myFirebaseRef;
     private TransferUtility transferUtility;
+    private boolean backPressedOnce;
+    private ArrayList<HashMap<String,String>> arrayList = null;
+    public static final int CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE = 1777;
+
+
+
+
 
 
     @Override
@@ -66,7 +81,14 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         );
         AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
         transferUtility = new TransferUtility(s3, getApplicationContext());
+/*  THIS IS FROM CLASS ON 2/29/16. GETS PHOTO FROM PHONE AND SEND IT TO AN IMAGEVIEW.
 
+        if(getIntent() != null && getIntent().getAction().equals(Intent.ACTION_SEND)){
+            final ImageView imageView = findViewById(R.id.imageview);
+            Uri imageUri = (Uri)getIntent().getParcelableExtra(Intent.EXTRA_STREAM);
+            Picasso.with(this).load(imageUri).into(imageView);
+        }
+*/
 
 
         // This is for the firebase
@@ -100,76 +122,59 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(StartActivity.this, QuestionViewerActivity.class);
-                startActivity(myIntent);
-
-                // this part to save captured image on provided path
-    //            File file = new File(Environment.getExternalStorageDirectory(), "my-photo.jpg");
-      //          Uri photoPath = Uri.fromFile(file);
-        //        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoPath);
-
-
-/* Uncomment this out to have the camera activated
-                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(cameraIntent, CAMERA_REQUEST);
+                SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+                if (sharedPref.contains("username")) {
+                    Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                    File file = new File(Environment.getExternalStorageDirectory()+File.separator + "image.jpg");
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
+                    startActivityForResult(intent, CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE);
+                    /*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                    }
 */
-
+     /*               Intent myIntent = new Intent(StartActivity.this, QuestionViewerActivity.class);
+                    startActivity(myIntent);*/
+                } else
+                    Toast.makeText(StartActivity.this, "You must be logged in to make a post!",
+                            Toast.LENGTH_LONG).show();
             }
         });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+                TextView drawerUsername = (TextView) findViewById(R.id.drawerUserName);
+                TextView drawerEmailAddress = (TextView) findViewById(R.id.drawerEmailAddress);
+                SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+                drawerUsername.setText(sharedPref.getString("username",""));
+                drawerEmailAddress.setText(sharedPref.getString("email",""));
+            }
+        };
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        listView = (ListView) findViewById(R.id.list);
-
-
-        final String[] arrayTitle = new String[]{
-                "This is the first title", "second", "third", "fourth",
-                "5", "6", "7", "8", "9", "10", "11","12","13","14","15","16"
-        };
-        final String[] arrayCategory = new String[]{
-                "Home", "Outdoor", "Garden", "Bath",
-                "Garage", "Kitchen", "Auto", "ss8", "sss9", "ssss10", "sss11","sss12","sss13","sss14","sss15","ss16"
-        };
-        final String[] arrayDate = new String[]{
-                "01/09/2015", "01/09/2015", "01/09/2015", "01/09/2015",
-                "01/09/2015", "01/09/2015", "01/09/2015", "8ttt", "9tt", "10ttt", "11ttt","12ttt","13ttt","14ttt","15ttt","16tttt"
-        };
-        final String[] arrayAnsComplete = new String[]{
-                "Yes", "No", "No", "Yes",
-                "No", "Yes", "No", "No", "No", "10ttt", "11ttt","12ttt","13ttt","14ttt","15ttt","16tttt"
-        };
-
-        ArrayList<HashMap<String, String>> titleList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            HashMap<String, String> data = new HashMap<>();
-            data.put("title",arrayTitle[i]);
-            data.put("category", arrayCategory[i]);
-            data.put("date", arrayDate[i]);
-            data.put("answer_complete", arrayAnsComplete[i]);
-            titleList.add(data);
-        }
-
-        listView = (ListView)findViewById(R.id.list);
-        //Setup adapter
-        customListViewAdapter = new CustomListViewAdapter(getApplicationContext(),titleList);
-        listView.setAdapter(customListViewAdapter);
+        arrayList = popCustomListViewAdapter();
 
         listView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         int myPosition = position;
-                        String itemClickId = listView.getItemAtPosition(myPosition).toString();
-                        Toast.makeText(getApplicationContext(), "Id Clicked " + itemClickId, Toast.LENGTH_SHORT).show();
+                        HashMap<String, String> data = arrayList.get(position);
+                        Intent intent = new Intent(StartActivity.this, QuestionViewerActivity.class);
+                        intent.putExtra("snapshotLocation", data.get("snapshotLocation"));
+                        startActivity(intent);
 
+                        String itemClickId = listView.getItemAtPosition(myPosition).toString();
                         if (position == 0) {
-                            Toast.makeText(StartActivity.this, "Hello", Toast.LENGTH_SHORT).show();
                             //Intent i = new Intent(StartActivity.this, MainActivity.class);
                             //startActivity(i);
                         }
@@ -178,89 +183,65 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         );
     }
 
+
+    // This is called when FAB is clicked and the user clicks OK after taking a picture
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        // If the user choose ok then enter.
-        if (resultCode == RESULT_OK) {
-            if(requestCode == CAMERA_REQUEST) {
-
-                // get bundle
-           //     Bundle extras = data.getExtras();
-               // Object extras = data.getExtras();
-                // get bitmap
-                //final File myFile = (File) extras.get("data");
-            //    final Bitmap myFile = (Bitmap) extras.get("data");
-
-
-                // This is where we are hearing back from the camera
- //               final Bitmap cameraImage = (Bitmap) data.getExtras().get("data");//This is how we access the image the camera takes
-
-//                Intent myIntent = new Intent(StartActivity.this, QuestionViewerActivity.class);
-  //              myIntent.putExtra("bitmapImage", myFile);
-    //            startActivity(myIntent);
-
-//                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//                cameraImage.compress(Bitmap.CompressFormat.PNG, 100, stream);
-//                cameraImage.recycle();
-//                byte[] byteArray = stream.toByteArray();
-//                String imageFile = Base64.encodeToString(byteArray, Base64.DEFAULT);
-//               myFirebaseRef.child("user_name_01/photo").setValue(imageFile); // Mods the existing name
-//                myFirebaseRef.child("user_name_01/photo").addListenerForSingleValueEvent(new ValueEventListener() {
-
-
-
-//                    String bucketName = "handleit";
-  //                  String key = "photo1";
-//                    TransferObserver observer = transferUtility.upload(
-//                            bucketName,     /* The bucket to upload to */
-//                            key,    /* The key for the uploaded object */
-//                            myFile        /* The file where the data to upload exists */
-//                    );
-    //            File tempFile = null;
-      //          TransferObserver observer = transferUtility.download(
-        //                bucketName,     /* The bucket to download from */
-          //              "Content-Type",    /* The key for the object to download */
-            //            tempFile        /* The file to download the object to */
-              //  );
-
-
-
-
-/*
-
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-
-
-                        Log.i("Tag", "in onDataChange");
-                        String photoData = "";
-                        photoData = photoData.substring(dataSnapshot.getValue().toString().indexOf(",") + 1);
-                        byte[] imageAsBytes = Base64.decode(photoData, Base64.DEFAULT);
-                        Bitmap bmp = BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
-                        Log.i("Tag", "After setting the image2");
-   //////////////////////////////////////THIS IS WHER IT STARTED BREAKING
-                        Intent myIntent = new Intent(StartActivity.this, QuestionViewerActivity.class);
-                        myIntent.putExtra("bitmapDecoded", photoData);
-                        startActivity(myIntent);
-                       // imageView = (ImageView) findViewById(R.id.help_item_image);
-                        Log.i("Tag", "After setting the image3");
-                       // imageView.setImageBitmap(bmp);
-                        Log.i("Tag", "After setting the image4");
-
-
-                    }
-
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-*/
-       //         });
-            }
+        /* Old one used
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            String bitmapString = bitmapToBase64(imageBitmap);
+            Intent intent = new Intent(StartActivity.this, CreateQuestion.class);
+            intent.putExtra("photo", bitmapString);
+            intent.putExtra("uploadType", "photo");
+            startActivity(intent);
+        }*/
+        //Check that request code matches ours:
+        if (requestCode == CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK)
+        {
+            //Get our saved file into a bitmap object:
+            File file = new File(Environment.getExternalStorageDirectory()+File.separator + "image.jpg");
+            Bitmap bitmap = decodeSampledBitmapFromFile(file.getAbsolutePath(), 1000, 700);
+            Intent intent = new Intent(StartActivity.this, CreateQuestion.class);
+            intent.putExtra("photo", bitmap);
+            intent.putExtra("uploadType", "photo");
+            startActivity(intent);
         }
     }
+    public static Bitmap decodeSampledBitmapFromFile(String path, int reqWidth, int reqHeight)
+    { // BEST QUALITY MATCH
 
+        //First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, options);
+
+        // Calculate inSampleSize, Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        int inSampleSize = 1;
+
+        if (height > reqHeight)
+        {
+            inSampleSize = Math.round((float)height / (float)reqHeight);
+        }
+        int expectedWidth = width / inSampleSize;
+
+        if (expectedWidth > reqWidth)
+        {
+            //if(Math.round((float)width / (float)reqWidth) > inSampleSize) // If bigger SampSize..
+            inSampleSize = Math.round((float)width / (float)reqWidth);
+        }
+
+        options.inSampleSize = inSampleSize;
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(path, options);
+    }
 
     @Override
     public void onBackPressed() {
@@ -268,7 +249,21 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            if (backPressedOnce) {
+                /*super.onBackPressed();
+                return;*/
+                finish();
+            }
+            this.backPressedOnce = true;
+            Toast.makeText(this, "Click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    backPressedOnce = false;
+                }
+            }, 2000);
         }
     }
 
@@ -287,8 +282,18 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         if (id == R.id.action_login) {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
+            finish();
             return true;
         }
+        if (id == R.id.action_logout) {
+            myFirebaseRef.unauth();
+            SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.clear();
+            editor.commit();
+            return true;
+        }
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -299,7 +304,7 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_notifications) {
+/*        if (id == R.id.nav_notifications) {
             // Handle the camera action
         } else if (id == R.id.nav_upload) {
 
@@ -311,6 +316,14 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
 
         } else if (id == R.id.nav_send) {
 
+        } else */if (id == R.id.nav_create_post) {
+            SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+            if(sharedPref.contains("username")) {
+                Intent intent = new Intent(StartActivity.this, PostQuestion.class);
+                startActivity(intent);
+            }else
+                Toast.makeText(StartActivity.this,"You must be logged in to make a post!",
+                        Toast.LENGTH_LONG).show();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -324,5 +337,80 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
+    }
+    // This converts image to Base64 so I can store it in Firebase
+    private String bitmapToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+
+        return Base64.encodeToString(byteArray, Base64.DEFAULT);
+    }
+
+    // This decodes Base64 and returns a Bitmap image to be used
+    private Bitmap base64ToBitmap(String b64) {
+        byte[] imageAsBytes = Base64.decode(b64.getBytes(), Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        arrayList = popCustomListViewAdapter();
+        SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+    }
+
+    public boolean onPrepareOptionsMenu(Menu menu)
+    {
+        SharedPreferences sharedPref = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+        MenuItem login = menu.findItem(R.id.action_login);
+        if(sharedPref.contains("username")) {
+            login.setVisible(false);
+        } else {
+            login.setVisible(true);
+        }
+        MenuItem logout = menu.findItem(R.id.action_logout);
+        if(sharedPref.contains("username")) {
+            logout.setVisible(true);
+        } else {
+            logout.setVisible(false);
+        }
+        return true;
+    }
+
+    private ArrayList<HashMap<String,String>> popCustomListViewAdapter() {
+        listView = (ListView) findViewById(R.id.list);
+        final ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
+        myFirebaseRef.child("question").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                HashMap<String, String> data = new HashMap<>();
+
+                for(DataSnapshot photoSnapshot : dataSnapshot.child("photo").getChildren()){
+                    for(DataSnapshot childSnap : photoSnapshot.getChildren()){
+                        data = new HashMap<>();
+                        data.put("title", childSnap.child("title").getValue().toString());
+                        data.put("category", childSnap.child("category").getValue().toString());
+                        data.put("date", childSnap.child("date").getValue().toString());
+                        data.put("answer_complete", childSnap.child("complete").getValue().toString());
+                        data.put("snapshotLocation","question/photo/"+childSnap.child("category")
+                                .getValue().toString() + "/" + childSnap.child("title")
+                                .getValue().toString() );
+                        data.put("photo", childSnap.child("photo").getValue().toString());
+                        arrayList.add(data);
+                    }
+                }
+//to add to git
+                //Setup adapter
+                customListViewAdapter = new CustomListViewAdapter(getApplicationContext(), arrayList);
+                listView.setAdapter(customListViewAdapter);
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+        return arrayList;
     }
 }

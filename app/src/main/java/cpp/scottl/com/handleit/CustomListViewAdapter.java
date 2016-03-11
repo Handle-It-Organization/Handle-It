@@ -1,7 +1,10 @@
 package cpp.scottl.com.handleit;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +28,7 @@ public class CustomListViewAdapter extends BaseAdapter {
     private TextView category;
     private TextView date;
     private TextView answer_complete;
+    private ImageView iconImage;
 
 
     public CustomListViewAdapter(Context context, ArrayList<HashMap<String,String>>data) {
@@ -59,7 +63,7 @@ public class CustomListViewAdapter extends BaseAdapter {
             answer_complete = (TextView)view.findViewById(R.id.answer_complete_txt);
 
 
-            ImageView iconImage = (ImageView)view.findViewById(R.id.help_item_image);
+            iconImage = (ImageView)view.findViewById(R.id.help_item_image);
             ImageView expandImage = (ImageView)view.findViewById(R.id.more_info);
 
             HashMap<String, String> myHashMap = new HashMap<>();
@@ -67,9 +71,14 @@ public class CustomListViewAdapter extends BaseAdapter {
             title.setText(myHashMap.get("title"));
             category.setText(myHashMap.get("category"));
             date.setText(myHashMap.get("date"));
-            iconImage.setImageDrawable(myContext.getResources().getDrawable(R.drawable.ic_perm_media));
+            iconImage.setImageBitmap(base64ToBitmap(myHashMap.get("photo")));
             expandImage.setImageDrawable(myContext.getResources().getDrawable(R.drawable.ic_navigate_next_black));
         }
         return view;
+    }
+    // This decodes Base64 and returns a Bitmap image to be used
+    private Bitmap base64ToBitmap(String b64) {
+        byte[] imageAsBytes = Base64.decode(b64.getBytes(), Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
     }
 }
