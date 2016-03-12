@@ -83,8 +83,8 @@
             android:layout_gravity="center"
             android:id="@+id/question_photo"
             android:scaleType="fitXY"
-            android:layout_width="20dp"
-            android:layout_height="20dp"/>
+            android:layout_width="200dp"
+            android:layout_height="200dp"/>
         <Button
             android:layout_marginTop="5dp"
             android:layout_marginLeft="5dp"

@@ -60,6 +60,7 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
     private boolean backPressedOnce;
     private ArrayList<HashMap<String,String>> arrayList = null;
     public static final int CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE = 1777;
+    private Intent questionIntent;
 
 
 
@@ -118,7 +119,7 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
 
         });
 */
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+    /*    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -128,18 +129,19 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
                     File file = new File(Environment.getExternalStorageDirectory()+File.separator + "image.jpg");
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
                     startActivityForResult(intent, CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE);
-                    /*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+                    *//*Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                         startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
                     }
-*/
-     /*               Intent myIntent = new Intent(StartActivity.this, QuestionViewerActivity.class);
-                    startActivity(myIntent);*/
+*//*
+                  *//*  Intent myIntent = new Intent(StartActivity.this, CreateQuestion.class);
+                    startActivity(myIntent);*//*
                 } else
                     Toast.makeText(StartActivity.this, "You must be logged in to make a post!",
                             Toast.LENGTH_LONG).show();
             }
-        });
+        });*/
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
@@ -203,10 +205,15 @@ public class StartActivity extends AppCompatActivity implements NavigationView.O
             //Get our saved file into a bitmap object:
             File file = new File(Environment.getExternalStorageDirectory()+File.separator + "image.jpg");
             Bitmap bitmap = decodeSampledBitmapFromFile(file.getAbsolutePath(), 1000, 700);
-            Intent intent = new Intent(StartActivity.this, CreateQuestion.class);
-            intent.putExtra("photo", bitmap);
-            intent.putExtra("uploadType", "photo");
-            startActivity(intent);
+
+           // startActivity(new Intent(StartActivity.this,CreateQuestion.class).putExtra("photo", bitmap).putExtra("uploadType","photo"));
+            Intent qIntent = new Intent(StartActivity.this, CreateQuestion.class);
+            String temp = bitmapToBase64(bitmap);
+            qIntent.putExtra("photo", temp);
+            qIntent.putExtra("uploadType", "photo");
+            Log.i("HELLO", "3");
+            startActivity(qIntent);
+
         }
     }
     public static Bitmap decodeSampledBitmapFromFile(String path, int reqWidth, int reqHeight)

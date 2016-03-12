@@ -26,6 +26,7 @@ import com.firebase.client.Firebase;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -36,12 +37,14 @@ public class CreateQuestion extends AppCompatActivity {
     private Button questionSubmit, questionChooseImage, qTakePhoto, rotatePhoto;
     private Spinner questionCategorySpin;
     private Firebase firebase;
-    private String spinVal, title, description;
+    private String spinVal, title, description, base64String;
     private Bitmap selectedBitmap;
     private final static int SELECT_PHOTO = 12345;
     private int angle = 0;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     public static final int CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE = 1777;
+    // PICK_PHOTO_CODE is a constant integer
+    public final static int PICK_PHOTO_CODE = 1046;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +69,8 @@ public class CreateQuestion extends AppCompatActivity {
 
         if (extras.getString("photo").equals("none")) {
             Log.i("INIF", "in if");
-        }else{
+        }else {
+            Log.i("INIF", "HELLOPPSODODS");
             String passedPhoto = extras.getString("photo");
             selectedBitmap = base64ToBitmap(passedPhoto);
             questionPhoto.setImageBitmap(selectedBitmap);
@@ -126,13 +130,17 @@ public class CreateQuestion extends AppCompatActivity {
                 if(title.isEmpty() || description.isEmpty()){
                     Toast.makeText(CreateQuestion.this, "You must enter a title and description.", Toast.LENGTH_LONG).show();
                 }else{
+                    Log.i("THISST", base64String);
                     Question question = new Question(title, description, spinVal.toLowerCase(),
-                            username, userId, userEmail, complete, date, bitmapToBase64(selectedBitmap));
-                    Log.i("LLLL", "question/" + uploadType.trim() + "/" + spinVal.toLowerCase()
-                            + "/" + title);
+                            username, userId, userEmail, complete, date, base64String);//bitmapToBase64(selectedBitmap));
+                    Log.i("QWER", "1");
                     firebase.child("question/" + uploadType.trim()+"/"+spinVal.toLowerCase()
                             +"/"+title).setValue(question);
+                    Log.i("QWER", "2");
+
                     Intent myIntent = new Intent(CreateQuestion.this, StartActivity.class);
+                    Log.i("QWER", "3");
+
                     startActivity(myIntent);
 
                 }
@@ -143,12 +151,22 @@ public class CreateQuestion extends AppCompatActivity {
         questionChooseImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("TESTS", "0");
+    /*            Log.i("TESTS", "0");
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 Log.i("TESTS", "1");
-                photoPickerIntent.setType("image/*");
+                photoPickerIntent.setType("image*//*");
                 Log.i("TESTS", "2");
-                startActivityForResult(photoPickerIntent, SELECT_PHOTO);
+                startActivityForResult(photoPickerIntent, SELECT_PHOTO);*/
+                // Create intent for picking a photo from the gallery
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+                // If you call startActivityForResult() using an intent that no app can handle, your app will crash.
+                // So as long as the result is not null, it's safe to use the intent.
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    // Bring up gallery to select a photo
+                    startActivityForResult(intent, PICK_PHOTO_CODE);
+                }
             }
         });
     }
@@ -162,27 +180,26 @@ public class CreateQuestion extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        //Check that request code matches ours:
+
+        // This is for when the user takes the picture:
         if (requestCode == CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK)
         {
             //Get our saved file into a bitmap object:
             File file = new File(Environment.getExternalStorageDirectory()+File.separator + "image.jpg");
             Bitmap bitmap = decodeSampledBitmapFromFile(file.getAbsolutePath(), 1000, 700);
             selectedBitmap = bitmap;
+            base64String = bitmapToBase64(bitmap);
+            Log.i("THISST", base64String);
+
             questionPhoto.setImageBitmap(bitmap);
         }
-        // This is for when the user takes the picture
-        /*if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            selectedBitmap = extras.getParcelable("data");
-            //selectedBitmap = (Bitmap) extras.get("data");
-            questionPhoto.setImageBitmap(selectedBitmap);
-        }*/
         // Here we need to check if the activity that was triggers was the Image Gallery.
         // If it is the requestCode will match the LOAD_IMAGE_RESULTS value.
         // If the resultCode is RESULT_OK and there is some data we know that an image was picked.
-        if (requestCode == SELECT_PHOTO && resultCode == RESULT_OK && data != null) {
-            Log.i("TESTS", "3");
+        if (requestCode == PICK_PHOTO_CODE && data != null) {
+            Log.i("TESTS", "144444444222");
+
+/*            Log.i("TESTS", "3");
             // Let's read picked image data - its URI
             Uri pickedImage = data.getData();
             // Let's read picked image path using content resolver
@@ -198,7 +215,22 @@ public class CreateQuestion extends AppCompatActivity {
             Log.i("TESTS", "4");
 
             // At the end remember to close the cursor or you will end with the RuntimeException!
-            cursor.close();
+            cursor.close();*/
+            Uri photoUri = data.getData();
+            // Do something with the photo based on Uri
+            Bitmap selectedImage = null;
+            try {
+                selectedImage = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoUri);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            selectedBitmap = selectedImage;
+            base64String = bitmapToBase64(selectedImage);
+            Log.i("THISST", base64String);
+
+            // Load the selected image into a preview
+            questionPhoto.setImageBitmap(selectedImage);
+
         }
     }
 
